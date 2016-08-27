@@ -18,6 +18,7 @@ public class Message implements Serializable { //серализация??????
 	private String from; //от кого
 	private String to;//кому
 	private String text;//сообщение
+	private int counter;
 	
 	public String toJSON() { //преобразователь в формат JSON
 		Gson gson = new GsonBuilder().create();
@@ -95,5 +96,13 @@ public class Message implements Serializable { //серализация??????
 
 	public void setText(String text) {
 		this.text = text;
+	}
+
+	public int getCounter() {
+		return counter;
+	}
+
+	public void setCounter(int counter) {
+		this.counter = counter;
 	}
 }

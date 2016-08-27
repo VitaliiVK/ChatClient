@@ -48,8 +48,8 @@ public class Main {
 											case "1": //ENTER/CREATE CHAT-ROM
 												System.out.println("Enter chat-room name:");
 												String roomName = scanner.nextLine(); //читаем сообщение
-												roomName = roomName + " CHAT-ROOM"; //добавляем к названию метку, что это CHAT-ROOM
-												if (!roomName.isEmpty()) {
+												roomName = roomName + "(CHAT-ROOM)"; //добавляем к названию метку, что это CHAT-ROOM
+												if (!roomName.isEmpty()&&!roomName.contains(" ")) {
 													//проверка существует ли комната
 													boolean isExist = isExistRoom(roomName, false);
 													if(isExist){ //если чат комната существует:
@@ -70,7 +70,7 @@ public class Main {
 													}
 												}
 												else{
-													System.out.println("Room name can not by empty");
+													System.out.println("Room name can not by empty, or contain \" \"");
 												}
 												break;
 											case "2": //SHOW CHAT-ROOM LIST
@@ -149,8 +149,8 @@ public class Main {
 			if(aurorizOrRegOrCheck.equals("Check")){
 				System.out.println("Enter user login: "); //введите логин
 				login = scanner.nextLine(); //читаем сообщение
-				if (login.isEmpty()){
-					System.out.println("Login can not be empty!");
+				if (login.isEmpty()||login.contains(" ")){
+					System.out.println("Login can not be empty or contain \" \"!");
 					return null;
 				}
 			}
@@ -160,8 +160,8 @@ public class Main {
 				System.out.println("Enter pssWord: "); //введите пароль
 				passWord = scanner.nextLine(); //читаем сообщение
 				//если пустой ввод сзару на переввод
-				if (login.isEmpty() || passWord.isEmpty()) {
-					System.out.println("Login a passWord can not be empty!");
+				if (login.isEmpty() || passWord.isEmpty() || login.contains(" ") || passWord.contains(" ")) {
+					System.out.println("Login and passWord can not be empty or contain \" \"!");
 					return null;
 				}
 			}
@@ -258,6 +258,7 @@ public class Main {
 		}
 	}
 
+	//LOGOUT
 	private static void logout(String login) throws IOException {
 		//посылаем get запрос на сервер который установит пользователю офлайн
 		URL obj = new URL("http://localhost:8080/autoriz?login=" + login); //получаем обьект URL
@@ -275,6 +276,7 @@ public class Main {
 		}
 	}
 
+	//проверка сущесвует ли комната если create = false, создать новую комнату если create = true
 	private static boolean isExistRoom(String roomName, boolean create) throws IOException {
 		URL obj = new URL("http://localhost:8080/room?name=" + roomName + "&create=" + create); //получаем обьект URL
 		HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
@@ -317,4 +319,7 @@ public class Main {
 		}
 	}
 
+	private static void showRoomsOrUser(String roomsOrUsers)throws IOException {
+
+	}
 }

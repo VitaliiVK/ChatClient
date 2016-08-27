@@ -20,6 +20,14 @@ public class GetThread extends Thread { //наследуемся от поток
         this.priv = priv;
     }
 
+    public void setN(int n) {
+        this.n = n;
+    }
+
+    public int getN() {
+        return n;
+    }
+
     @Override
     public void run() { //метод который будет выполнятся в параллельном потоке
         try {
@@ -33,6 +41,7 @@ public class GetThread extends Thread { //наследуемся от поток
                 }
                 // передаем параметр from = сколько сообщений уже прочитано,
                 // и too - кому адресовано сообщение(main-chat, chat-room или личное)
+
                 URL url = new URL("http://localhost:8080/get?from="+n+"&login="+login+"&too="+too+"&priv="+priv); //URL ссылка на сервлет /get с параметром n -
                 // колличество уже проитанных сообщений
                 HttpURLConnection http = (HttpURLConnection) url.openConnection(); //открываем url соединение
@@ -46,8 +55,8 @@ public class GetThread extends Thread { //наследуемся от поток
                         Message[] list = gson.fromJson(new String(buf), Message[].class); //парсим данные из byte массива
                         //в котором записан массив сообщений в JSON формате
                         for (Message m : list) { //выводим все сообщения на экран, итерируем счетчик
+                            n = m.getCounter()+1;
                             System.out.println(m);
-                            n++;
                         }
                     }
                 }
