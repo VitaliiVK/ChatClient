@@ -318,8 +318,4 @@ public class Main {
 			}
 		}
 	}
-
-	private static void showRoomsOrUser(String roomsOrUsers)throws IOException {
-
-	}
 }
