@@ -6,16 +6,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 //параллельный коток, который будет проверять не появились ли новые сообщения на сервере
-
 public class GetThread extends Thread { //наследуемся от потока
 
-    private String login; //логин пользователя(для мониторинга личных сообщений)
     private String too; //в какой чат адресовано сообщение
     boolean priv;//флаг приватные сообщения
     private int n; //счетчик уже загруженных сообщений
 
-    public GetThread(String login, String too, boolean priv){
-        this.login = login;
+    public GetThread(String too, boolean priv){
         this.too = too;
         this.priv = priv;
     }
@@ -42,9 +39,10 @@ public class GetThread extends Thread { //наследуемся от поток
                 // передаем параметр from = сколько сообщений уже прочитано,
                 // и too - кому адресовано сообщение(main-chat, chat-room или личное)
 
-                URL url = new URL("http://localhost:8080/get?from="+n+"&login="+login+"&too="+too+"&priv="+priv); //URL ссылка на сервлет /get с параметром n -
+                URL url = new URL("http://localhost:8080/get?from="+n+"&too="+too+"&priv="+priv); //URL ссылка на сервлет /get с параметром n -
                 // колличество уже проитанных сообщений
                 HttpURLConnection http = (HttpURLConnection) url.openConnection(); //открываем url соединение
+                Main.addCookie(http);//добавляем Cookie
 
                 try(InputStream is = http.getInputStream()) {// получаем входящий поток из url соединения
                     int sz = is.available(); //спрашиваем сколько байт доступно для чтения
@@ -61,7 +59,8 @@ public class GetThread extends Thread { //наследуемся от поток
                     }
                 }
             }
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             ex.printStackTrace();
             return;
         }

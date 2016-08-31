@@ -1,11 +1,7 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Serializable;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -45,25 +41,6 @@ public class Message implements Serializable { //серализация??????
 				.append(text).toString();
 	}
 
-	//отправить сообщение принимаем ссылку куда отправить, возвращает код ошибки сервера
-	public int send(String url) throws IOException {
-		URL obj = new URL(url); //получаем обьект URL
-		HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
-		
-		conn.setRequestMethod("POST"); //указываем тип запроса
-		conn.setDoOutput(true);
-		//setDoOutput(true) Используется для POST и PUT запросов. Если false, то это для использования GET запросов.
-	
-		OutputStream os = conn.getOutputStream(); //получаем исходящий поток для URL соединения
-		try {
-			String json = this.toJSON(); //получаем строку в JSON формате в которой записано наше сообщение
-			os.write(json.getBytes()); //преобразуем строку в массив байтов и пишем в исходящий поток
-			
-			return conn.getResponseCode(); // спрашиваем код ошибки у сервера, и возвращаем как результат работы метода
-		} finally {
-			os.close(); //закрываем исходящий поток
-		}
-	}
 
 	//геттеры и сеттеры
 	public Date getDate() {

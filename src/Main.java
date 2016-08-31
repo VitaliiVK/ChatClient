@@ -1,10 +1,13 @@
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
+
+	private static List<String> cookiesHeader = null;
 
 	public static void main(String[] args) throws IOException {
 
@@ -35,7 +38,7 @@ public class Main {
 							String answer2 = scanner.nextLine(); //читаем сообщение
 							switch (answer2) {
 								case "1": //MAIN CHAT
-									sendMessage(scanner, login, "MAIN-CHAT", false);
+									sendMessage(scanner, "MAIN-CHAT", false);
 									break;
 								case "2": //CHAT ROOM
 									while(true)  {
@@ -54,7 +57,7 @@ public class Main {
 													boolean isExist = isExistRoom(roomName, false);
 													if(isExist){ //если чат комната существует:
 														System.out.println("Welcome too chat-room: " + roomName);
-														sendMessage(scanner, login, roomName, false);
+														sendMessage(scanner, roomName, false);
 													}
 													else { //если не существует
 														System.out.println("Chat-room with name: \"" + roomName + "\" not exist!");
@@ -64,7 +67,7 @@ public class Main {
 															boolean created = isExistRoom(roomName, true);
 															if(created) {
 																System.out.println("Chat-room \""+roomName+"\" created");
-																sendMessage(scanner, login, roomName, false);
+																sendMessage(scanner, roomName, false);
 															}
 														}
 													}
@@ -96,7 +99,7 @@ public class Main {
 												if (answ != null) {
 													if(!answ.equals(login)) {
 														System.out.println("Private chat with " + answ);
-														sendMessage(scanner, login, answ, true);
+														sendMessage(scanner, answ, true);
 													}
 													else{
 														System.out.println("You can not send massage to your self!");
@@ -115,7 +118,7 @@ public class Main {
 										}
 									}
 								case "4": //LOGOUT
-									logout(login);
+									logout();
 									break lebel;
 								default:
 									System.out.println("Invalid Enter");
@@ -139,7 +142,7 @@ public class Main {
 		}
 	}
 
-	//АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ
+	//АВТОРИЗАЦИЯ / РЕГИСТРАЦИЯ / проверка существования пользователя
 	private static String authorizationOrRegistrationOrCheck(Scanner scanner, String aurorizOrRegOrCheck)throws IOException{
 		String login = "";
 		String passWord = "";
@@ -175,10 +178,14 @@ public class Main {
 			else{ //"Check"
 				obj = new URL("http://localhost:8080/autoriz?login=" + login + "&pas="); //получаем обьект URL
 			}
+
 			HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
 			conn.setRequestMethod("POST"); //указываем тип запроса
 			conn.setDoOutput(true);
+			addCookie(conn);//добавляем Cookie (добавится только если проверка пользователя осуществляется)
+
 			try(InputStream is = conn.getInputStream()) {// получаем входящий поток из url соединения
+
 				int sz = is.available(); //спрашиваем сколько байт доступно для чтения
 				String serverAnswer = null;
 				if (sz > 0) {//если есть что читать
@@ -187,6 +194,9 @@ public class Main {
 					serverAnswer = new String(buf); //преобразуем байт масисв в строку
 					if("ok".equals(serverAnswer)){ //если сервер прислал подтвержение акаунта
 						if(aurorizOrRegOrCheck.equals("Authorization")) {
+							//если пришла куки - сохраняем
+							Map<String, List<String>> headerFields = conn.getHeaderFields();
+							cookiesHeader = headerFields.get("Set-Cookie");
 							System.out.println("Authorization is successful!"); //выводим сообщение что авторизация успешна
 						}
 						if(aurorizOrRegOrCheck.equals("Registration")) {
@@ -213,14 +223,12 @@ public class Main {
 			}
 		}
 	}
-
 	//SEND MASSAGES (MAIN CHAT, CHAT ROOM, PRIVATE)
-	//login пльзователя чтобы подписать от кого сообщение и передать в GET message поток для кого сообщения считывать
 	//too - указываем кому пишем сообщеине и передаем в GET message поток для кого сообщения считывать
 	//priv - флаг устанавливающий приватный диалог и GET message поток должен считывать только сообщения 2х пользователй друг другу
-	private static void sendMessage(Scanner scanner, String login, String too, boolean priv) throws IOException{
+	private static void sendMessage(Scanner scanner, String too, boolean priv) throws IOException{
 
-		GetThread th = new GetThread(login, too, priv); // создаем поток, который будет проверять не появились ли новые сообщения на сервере
+		GetThread th = new GetThread(too, priv); // создаем поток, который будет проверять не появились ли новые сообщения на сервере
 		th.setDaemon(true); // устанавливаем его демоном, чтоб он завершился когда завершится программа
 		th.start(); //запускаем его на выполнение
 
@@ -242,14 +250,27 @@ public class Main {
 
 			Message m = new Message(); // создаем обьект сообщение
 			m.setText(text); //записываем введенный текст
-			m.setFrom(login); //записываем откого (login)
+			//m.setFrom(login); //от кого сообщение напишет сервер, исходя из Cookie
 			m.setTo(too); //кому main-chat, chat-room или личные сообщения
 
 			try {
-				int res = m.send("http://localhost:8080/add"); //у сообщения вызываем метод .send() с адресом сервлета /add
-				if (res != 200) { //если вернулся код ошибки не 200
-					System.out.println("HTTP error: " + res); //выводим сообщение что данные не дошли на сервер и код
-					return;
+				URL obj = new URL("http://localhost:8080/add"); //получаем обьект URL
+				HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
+				conn.setRequestMethod("POST"); //указываем тип запроса
+				conn.setDoOutput(true);//Используется для POST и PUT запросов. Если false, то это для использования GET запросов.
+				addCookie(conn);//добавляем Cookie
+
+				try(OutputStream os = conn.getOutputStream()) {
+					String json = m.toJSON(); //получаем строку в JSON формате в которой записано наше сообщение
+					os.write(json.getBytes()); //преобразуем строку в массив байтов и пишем в исходящий поток
+					int res = conn.getResponseCode(); // спрашиваем код ошибки у сервера
+					if (res != 200) { //если вернулся код ошибки не 200
+						System.out.println("HTTP error: " + res); //выводим сообщение что данные не дошли на сервер и код
+						if(res==401){
+							System.out.println("Unauthorized request!");
+						}
+						return;
+					}
 				}
 			} catch (IOException ex) {
 				System.out.println("Error: " + ex.getMessage());
@@ -259,10 +280,11 @@ public class Main {
 	}
 
 	//LOGOUT
-	private static void logout(String login) throws IOException {
+	private static void logout() throws IOException {
 		//посылаем get запрос на сервер который установит пользователю офлайн
-		URL obj = new URL("http://localhost:8080/autoriz?login=" + login); //получаем обьект URL
+		URL obj = new URL("http://localhost:8080/autoriz"); //получаем обьект URL
 		HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
+		addCookie(conn);
 		try(InputStream is = conn.getInputStream()) {// получаем входящий поток из url соединения
 			int sz = is.available(); //спрашиваем сколько байт доступно для чтения
 			String serverAnswer = null;
@@ -270,6 +292,7 @@ public class Main {
 				byte[] buf = new byte[is.available()]; //создаем массив байт (на количество доступных для чтения байт)
 				is.read(buf); //читаем байты в буфер
 				if(new String(buf).equals("logout")){
+					cookiesHeader = null; //уничтожаем cookie
 					System.out.println("You are logout!");
 				}
 			}
@@ -282,6 +305,7 @@ public class Main {
 		HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
 		conn.setRequestMethod("POST"); //указываем тип запроса
 		conn.setDoOutput(true);
+		addCookie(conn);//добавляем Cookie
 		try(InputStream is = conn.getInputStream()) {// получаем входящий поток из url соединения
 			int sz = is.available(); //спрашиваем сколько байт доступно для чтения
 			String serverAnswer = null;
@@ -307,6 +331,8 @@ public class Main {
 			obj = new URL("http://localhost:8080/reg"); //получаем обьект URL
 		}
 		HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
+		addCookie(conn);//добавляем Cookie
+
 		try(InputStream is = conn.getInputStream()) {// получаем входящий поток из url соединения
 			int sz = is.available(); //спрашиваем сколько байт доступно для чтения
 			String serverAnswer = null;
@@ -316,6 +342,12 @@ public class Main {
 				serverAnswer = new String(buf); //преобразуем байт масисв в строку
 				System.out.println(serverAnswer);
 			}
+		}
+	}
+
+	public static void addCookie(HttpURLConnection conn){
+		if(cookiesHeader != null && cookiesHeader.size()>0) {
+			conn.setRequestProperty("Cookie", String.join(";", cookiesHeader));
 		}
 	}
 }
