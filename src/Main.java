@@ -17,121 +17,118 @@ public class Main {
 			while (true) lebel: {
 				System.out.println("1 - Authorization");
 				System.out.println("2 - Registration");
-				System.out.println("3 - Exit");
+				System.out.println("3 - MAIN CHAT");
+				System.out.println("4 - CHAT ROOM");
+				System.out.println("5 - PRIVATE MESSAGES");
+				System.out.println("6 - logout");
+				System.out.println("7 - Exit");
 
 				String answer1 = scanner.nextLine(); //читаем сообщение
+				String login = "";
 				switch (answer1)  {
 					case "1": //АВТОРИЗАЦИЯ
 						System.out.println("Authorization form:");
 						//форма с авторизацией, при успешной авторизации вернется логин, при не успешной null
-						String login = authorizationOrRegistrationOrCheck(scanner, "Authorization");
-						if(login==null){ //если регистрация не прошла
-							break; //отправляем в главное меню
-						}
-						//ЕСЛИ АВТОРИЗАЦИЯ УСПЕШНА
-						while (true) lebel2: {
-							System.out.println("1 - MAIN CHAT");
-							System.out.println("2 - CHAT ROOM");
-							System.out.println("3 - PRIVATE MESSAGES");
-							System.out.println("4 - logout");
+						login = authorizationOrRegistrationOrCheck(scanner, "Authorization");
+						break;
 
-							String answer2 = scanner.nextLine(); //читаем сообщение
-							switch (answer2) {
-								case "1": //MAIN CHAT
-									sendMessage(scanner, "MAIN-CHAT", false);
+					case "2": //РЕГИСТРАЦИЯ
+						System.out.println("Registration form:");
+						//форма с регистрацией,
+						authorizationOrRegistrationOrCheck(scanner, "Registration");
+						break;
+
+					case "3": //MAIN CHAT
+						sendMessage(scanner, "MAIN-CHAT", false);
+						break;
+
+					case "4": //CHAT ROOM
+						while(true)  {
+							System.out.println("1 - Enter/Create chat-room");
+							System.out.println("2 - Show chat room list:");
+							System.out.println("3 - Exit");
+
+							String answer3 = scanner.nextLine(); //читаем сообщение
+							switch (answer3) {
+								case "1": //ENTER/CREATE CHAT-ROM
+									System.out.println("Enter chat-room name:");
+									String roomName = scanner.nextLine(); //читаем сообщение
+									roomName = roomName + "(CHAT-ROOM)"; //добавляем к названию метку, что это CHAT-ROOM
+									if (!roomName.isEmpty()&&!roomName.contains(" ")) {
+										//проверка существует ли комната
+										String isExist = isExistRoom(roomName, false);
+										if(isExist.equals("isExist")){ //если чат комната существует:
+											System.out.println("Welcome too chat-room: " + roomName);
+											sendMessage(scanner, roomName, false);
+										} else if(isExist.equals("notExist")){ //если не существует
+											System.out.println("Chat-room with name: \"" + roomName + "\" not exist!");
+											System.out.println("Do you want create NEW Chat-rom? (y/n)");
+											String answ = scanner.nextLine(); //читаем сообщение
+											if ("y".equals(answ)) {
+												String isCreated = isExistRoom(roomName, true);
+												if(isCreated.equals("isCreated")) {
+													System.out.println("Chat-room \""+roomName+"\" created");
+													sendMessage(scanner, roomName, false);
+												}
+											}
+										} else{ //если пользователь не залогинен
+											System.out.println(isExist);
+										}
+									}
+									else{
+										System.out.println("Room name can not by empty, or contain \" \"");
+									}
 									break;
-								case "2": //CHAT ROOM
-									while(true)  {
-										System.out.println("1 - Enter/Create chat-room");
-										System.out.println("2 - Show chat room list:");
-										System.out.println("3 - Exit");
-
-										String answer3 = scanner.nextLine(); //читаем сообщение
-										switch (answer3) {
-											case "1": //ENTER/CREATE CHAT-ROM
-												System.out.println("Enter chat-room name:");
-												String roomName = scanner.nextLine(); //читаем сообщение
-												roomName = roomName + "(CHAT-ROOM)"; //добавляем к названию метку, что это CHAT-ROOM
-												if (!roomName.isEmpty()&&!roomName.contains(" ")) {
-													//проверка существует ли комната
-													boolean isExist = isExistRoom(roomName, false);
-													if(isExist){ //если чат комната существует:
-														System.out.println("Welcome too chat-room: " + roomName);
-														sendMessage(scanner, roomName, false);
-													}
-													else { //если не существует
-														System.out.println("Chat-room with name: \"" + roomName + "\" not exist!");
-														System.out.println("Do you want create NEW Chat-rom? (y/n)");
-														String answ = scanner.nextLine(); //читаем сообщение
-														if ("y".equals(answ)) {
-															boolean created = isExistRoom(roomName, true);
-															if(created) {
-																System.out.println("Chat-room \""+roomName+"\" created");
-																sendMessage(scanner, roomName, false);
-															}
-														}
-													}
-												}
-												else{
-													System.out.println("Room name can not by empty, or contain \" \"");
-												}
-												break;
-											case "2": //SHOW CHAT-ROOM LIST
-												System.out.println("Chat-roms list:");
-												showRoomsOrUsers("Rooms");
-												break;
-											case "3": //EXIT
-												break lebel2;
-											default:
-												System.out.println("Invalid Enter");
-												break;
-										}
-									}
-								case "3": //PRIVATE MESSAGE
-									while (true) {
-										System.out.println("1 - Sand message to User");
-										System.out.println("2 - Show users list");
-										System.out.println("3 - Exit");
-										String answer4 = scanner.nextLine(); //читаем сообщение
-										switch (answer4) {
-											case "1": //SENG MASSEGE
-												String answ = authorizationOrRegistrationOrCheck(scanner, "Check");
-												if (answ != null) {
-													if(!answ.equals(login)) {
-														System.out.println("Private chat with " + answ);
-														sendMessage(scanner, answ, true);
-													}
-													else{
-														System.out.println("You can not send massage to your self!");
-													}
-												}
-												break;
-											case "2"://SHOW USER LIST
-												System.out.println("User list " + answer4);
-												showRoomsOrUsers("Users");
-												break;
-											case "3"://EXIT
-												break lebel2;
-											default:
-												System.out.println("Invalid Enter");
-												break;
-										}
-									}
-								case "4": //LOGOUT
-									logout();
+								case "2": //SHOW CHAT-ROOM LIST
+									System.out.println("Chat-roms list:");
+									showRoomsOrUsers("Rooms");
+									break;
+								case "3": //EXIT
 									break lebel;
 								default:
 									System.out.println("Invalid Enter");
 									break;
 							}
 						}
-					case "2": //РЕГИСТРАЦИЯ
-						System.out.println("Registration form:");
-						//форма с регистрацией, при успешной регистрации вернется логин, при не успешной null
-						authorizationOrRegistrationOrCheck(scanner, "Registration");
-						break;
-					case "3": //ВЫХОД
+
+					case "5": //PRIVATE MESSAGE
+						while (true) {
+							System.out.println("1 - Sand message to User");
+							System.out.println("2 - Show users list");
+							System.out.println("3 - Exit");
+							String answer4 = scanner.nextLine(); //читаем сообщение
+							switch (answer4) {
+								case "1": //SENG MASSEGE
+									String answ = authorizationOrRegistrationOrCheck(scanner, "Check");
+									if (answ != null) {
+										if(!answ.equals(login)) {
+											System.out.println("Private chat with " + answ);
+											sendMessage(scanner, answ, true);
+										}
+										else{
+											System.out.println("You can not send massage to your self!");
+										}
+									}
+									break;
+								case "2"://SHOW USER LIST
+									System.out.println("User list:");
+									showRoomsOrUsers("Users");
+									break;
+								case "3"://EXIT
+									break lebel;
+								default:
+									System.out.println("Invalid Enter");
+									break;
+							}
+						}
+					case "6": //LOGOUT
+						logout();
+						break ;
+
+					case "7": //ВЫХОД
+						logout();
 						return;
+
 					default:
 						System.out.println("Invalid enter");
 						break ;
@@ -206,6 +203,9 @@ public class Main {
 					}
 					else {
 						System.out.println(serverAnswer);
+						if("You are logged already!".equals(serverAnswer)){
+							return null;
+						}
 						System.out.println("1 - try again");
 						System.out.println("2 - back to menu");
 						String answer = scanner.nextLine(); //читаем сообщение
@@ -300,7 +300,7 @@ public class Main {
 	}
 
 	//проверка сущесвует ли комната если create = false, создать новую комнату если create = true
-	private static boolean isExistRoom(String roomName, boolean create) throws IOException {
+	private static String isExistRoom(String roomName, boolean create) throws IOException {
 		URL obj = new URL("http://localhost:8080/room?name=" + roomName + "&create=" + create); //получаем обьект URL
 		HttpURLConnection conn = (HttpURLConnection) obj.openConnection(); //открываем URL соединение
 		conn.setRequestMethod("POST"); //указываем тип запроса
@@ -313,12 +313,10 @@ public class Main {
 				byte[] buf = new byte[is.available()]; //создаем массив байт (на количество доступных для чтения байт)
 				is.read(buf); //читаем байты в буфер
 				serverAnswer = new String(buf); //преобразуем байт масисв в строку
-				if ("ok".equals(serverAnswer)) { //если сервер прислал подтвержение акаунта
-					return true;
-				}
+				return serverAnswer;
 			}
 		}
-		return false;
+		return "Server error!";
 	}
 
 	//показать список чат-комнат или пользователей
@@ -347,7 +345,7 @@ public class Main {
 
 	public static void addCookie(HttpURLConnection conn){
 		if(cookiesHeader != null && cookiesHeader.size()>0) {
-			conn.setRequestProperty("Cookie", String.join(";", cookiesHeader));
+			conn.setRequestProperty("Cookie", String.join (";", cookiesHeader));
 		}
 	}
 }
